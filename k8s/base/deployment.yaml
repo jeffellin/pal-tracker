@@ -23,16 +23,20 @@ spec:
           - secretRef:
               name: db-credentials
           env:
-           - name: WELCOME_MESSAGE
-             valueFrom:
-               configMapKeyRef:
-                 name: pal-tracker
-                 key: welcome.message
-           - name: SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE
-             valueFrom:
-               configMapKeyRef:
-                 name: pal-tracker
-                 key: spring.datasource.hikari.maximumpoolsize
+          - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+            value: "*"
+          - name: MANAGEMENT_ENDPOINT_HEALTH_SHOWDETAILS
+            value: always
+          - name: WELCOME_MESSAGE
+            valueFrom:
+              configMapKeyRef:
+                    name: pal-tracker
+                    key: welcome.message
+          - name: SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE
+            valueFrom:
+              configMapKeyRef:
+                name: pal-tracker
+                key: spring.datasource.hikari.maximumpoolsize
           readinessProbe:
             httpGet:
               path: /

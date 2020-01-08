@@ -1,17 +1,18 @@
 package test.pivotal.pal.tracker;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.pivotal.pal.tracker.TimeEntry;
 import io.pivotal.pal.tracker.TimeEntryController;
 import io.pivotal.pal.tracker.TimeEntryRepository;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -22,12 +23,27 @@ import static org.mockito.Mockito.*;
 
 public class TimeEntryControllerTest {
     private TimeEntryRepository timeEntryRepository;
+    private DistributionSummary distributionSummary;
+    private Counter counter;
     private TimeEntryController controller;
 
     @BeforeEach
     public void setUp() {
-        timeEntryRepository = Mockito.mock(TimeEntryRepository.class);
-        controller = new TimeEntryController(timeEntryRepository);
+        timeEntryRepository = mock(TimeEntryRepository.class);
+        distributionSummary = mock(DistributionSummary.class);
+        counter = mock(Counter.class);
+
+        MeterRegistry meterRegistry = mock(MeterRegistry.class);
+
+        doReturn(distributionSummary)
+            .when(meterRegistry)
+            .summary("timeEntry.summary");
+
+        doReturn(counter)
+            .when(meterRegistry)
+            .counter("timeEntry.actionCounter");
+
+        controller = new TimeEntryController(timeEntryRepository, meterRegistry);
     }
 
     @Test
@@ -38,15 +54,20 @@ public class TimeEntryControllerTest {
 
         long timeEntryId = 1L;
         TimeEntry expectedResult = new TimeEntry(timeEntryId, projectId, userId, LocalDate.parse("2017-01-08"), 8);
-        Mockito.doReturn(expectedResult)
+        doReturn(expectedResult)
             .when(timeEntryRepository)
-            .create(ArgumentMatchers.any(TimeEntry.class));
+            .create(any(TimeEntry.class));
+        doReturn(new ArrayList<>(List.of(expectedResult)))
+            .when(timeEntryRepository)
+            .list();
 
         ResponseEntity response = controller.create(timeEntryToCreate);
 
-        Mockito.verify(timeEntryRepository).create(timeEntryToCreate);
-        Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        Assertions.assertThat(response.getBody()).isEqualTo(expectedResult);
+        verify(timeEntryRepository).create(timeEntryToCreate);
+        verify(counter).increment();
+        verify(distributionSummary).record(1);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isEqualTo(expectedResult);
     }
 
     @Test
@@ -55,26 +76,29 @@ public class TimeEntryControllerTest {
         long projectId = 123L;
         long userId = 456L;
         TimeEntry expected = new TimeEntry(timeEntryId, projectId, userId, LocalDate.parse("2017-01-08"), 8);
-        Mockito.doReturn(expected)
+        doReturn(expected)
             .when(timeEntryRepository)
             .find(timeEntryId);
 
         ResponseEntity<TimeEntry> response = controller.read(timeEntryId);
 
-        Mockito.verify(timeEntryRepository).find(timeEntryId);
-        Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Assertions.assertThat(response.getBody()).isEqualTo(expected);
+        verify(timeEntryRepository).find(timeEntryId);
+        verify(counter).increment();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(expected);
     }
 
     @Test
     public void testRead_NotFound() {
         long nonExistentTimeEntryId = 1L;
-        Mockito.doReturn(null)
+        doReturn(null)
             .when(timeEntryRepository)
             .find(nonExistentTimeEntryId);
 
         ResponseEntity<TimeEntry> response = controller.read(nonExistentTimeEntryId);
-        Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verifyNoInteractions(counter);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
@@ -83,13 +107,14 @@ public class TimeEntryControllerTest {
             new TimeEntry(1L, 123L, 456L, LocalDate.parse("2017-01-08"), 8),
             new TimeEntry(2L, 789L, 321L, LocalDate.parse("2017-01-07"), 4)
         );
-        Mockito.doReturn(expected).when(timeEntryRepository).list();
+        doReturn(expected).when(timeEntryRepository).list();
 
         ResponseEntity<List<TimeEntry>> response = controller.list();
 
-        Mockito.verify(timeEntryRepository).list();
-        Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Assertions.assertThat(response.getBody()).isEqualTo(expected);
+        verify(timeEntryRepository).list();
+        verify(counter).increment();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(expected);
     }
 
     @Test
@@ -98,33 +123,43 @@ public class TimeEntryControllerTest {
         long projectId = 987L;
         long userId = 654L;
         TimeEntry expected = new TimeEntry(timeEntryId, projectId, userId, LocalDate.parse("2017-01-07"), 4);
-        Mockito.doReturn(expected)
+        doReturn(expected)
             .when(timeEntryRepository)
-            .update(ArgumentMatchers.eq(timeEntryId), ArgumentMatchers.any(TimeEntry.class));
+            .update(eq(timeEntryId), any(TimeEntry.class));
 
         ResponseEntity response = controller.update(timeEntryId, expected);
 
-        Mockito.verify(timeEntryRepository).update(timeEntryId, expected);
-        Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Assertions.assertThat(response.getBody()).isEqualTo(expected);
+        verify(timeEntryRepository).update(timeEntryId, expected);
+        verify(counter).increment();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(expected);
     }
 
     @Test
     public void testUpdate_NotFound() {
         long nonExistentTimeEntryId = 1L;
-        Mockito.doReturn(null)
+        doReturn(null)
             .when(timeEntryRepository)
-            .update(ArgumentMatchers.eq(nonExistentTimeEntryId), ArgumentMatchers.any(TimeEntry.class));
+            .update(eq(nonExistentTimeEntryId), any(TimeEntry.class));
 
         ResponseEntity response = controller.update(nonExistentTimeEntryId, new TimeEntry());
-        Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verifyNoInteractions(counter);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     public void testDelete() {
         long timeEntryId = 1L;
+        doReturn(new ArrayList<>())
+            .when(timeEntryRepository)
+            .list();
+
         ResponseEntity response = controller.delete(timeEntryId);
-        Mockito.verify(timeEntryRepository).delete(timeEntryId);
-        Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        verify(timeEntryRepository).delete(timeEntryId);
+        verify(counter).increment();
+        verify(distributionSummary).record(0);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
     }
 }
