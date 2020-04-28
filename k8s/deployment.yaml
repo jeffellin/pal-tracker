@@ -4,6 +4,7 @@ metadata:
   name: pal-tracker
   labels:
     app: pal-tracker
+    foo: bar
 spec:
   selector:
     matchLabels:
@@ -17,7 +18,13 @@ spec:
     spec:
       containers:
         - name: pal-tracker-container
-          image: ellinj/pal-tracker:v0
+          image: ellinj/pal-tracker:v1
+          env:
+           - name: WELCOME_MESSAGE
+             valueFrom:
+               configMapKeyRef:
+                 name: pal-tracker
+                 key: welcome.message
           resources:
               limits: 
                 cpu: 200m
