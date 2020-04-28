@@ -6,6 +6,7 @@ metadata:
     app: pal-tracker
     foo: bar4
 spec:
+  replicas: 2
   selector:
     matchLabels:
       app: pal-tracker
@@ -33,7 +34,3 @@ spec:
             httpGet:
               path: /
               port: 8080
-          lifecycle:
-            preStop:
-              exec:
-                command: [ "/bin/sleep", "10" ]

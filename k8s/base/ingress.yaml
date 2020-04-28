@@ -6,8 +6,3 @@ metadata:
     app: pal-tracker
   annotations:
     kubernetes.io/ingress.class: nginx
-spec:
-  backend:
-    serviceName: pal-tracker
-    servicePort: 8080
-    
