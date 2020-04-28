@@ -4,7 +4,7 @@ metadata:
   name: pal-tracker
   labels:
     app: pal-tracker
-    foo: bar
+    foo: bar4
 spec:
   selector:
     matchLabels:
@@ -29,3 +29,11 @@ spec:
               limits: 
                 cpu: 200m
                 memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "/bin/sleep", "10" ]
