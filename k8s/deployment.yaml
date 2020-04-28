@@ -18,3 +18,7 @@ spec:
       containers:
         - name: pal-tracker-container
           image: ellinj/pal-tracker:v0
+          resources:
+              limits: 
+                cpu: 200m
+                memory: 512Mi
