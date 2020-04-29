@@ -43,4 +43,4 @@ jobs:
       - run: sed -i 's/github.run_number/${{github.run_number}}/g' k8s/environments/review/deployment.yaml
       - run: curl -0L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v3.5.4/kustomize_v3.5.4_linux_amd64.tar.gz --output kustomize_v3.5.4_linux_amd64.tar.gz
       - run: tar xvf kustomize_v3.5.4_linux_amd64.tar.gz
-      - run: kustomize build k8s/environment/review | kubectl apply -f -
+      - run: kustomize build k8s/environments/review | kubectl apply -f -
