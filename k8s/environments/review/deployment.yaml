@@ -7,4 +7,4 @@ spec:
     spec:
       containers:
         - name: pal-tracker-container
-          image: YOUR-DOCKERHUB-USERNAME/pal-tracker:build-github.run_number
+          image: ellinj/pal-tracker:build-github.run_number
