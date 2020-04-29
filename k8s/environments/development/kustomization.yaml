@@ -1,7 +1,9 @@
-bases:
-  - ../../base
 patchesStrategicMerge:
-  - configmap.yaml
-  - ingress.yaml
+- configmap.yaml
+- ingress.yaml
 namespace: development
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base
 nameSuffix: -development

@@ -3,6 +3,5 @@ bases:
 patchesStrategicMerge:
   - configmap.yaml
   - ingress.yaml
-  - deployment.yaml
 namespace: review
 nameSuffix: -review
