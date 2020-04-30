@@ -33,9 +33,6 @@ spec:
                configMapKeyRef:
                  name: pal-tracker
                  key: spring.datasource.hikari.maximumpoolsize
-          resources:
-              limits: 
-                cpu: 100m
           readinessProbe:
             httpGet:
               path: /
