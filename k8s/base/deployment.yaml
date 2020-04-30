@@ -18,13 +18,21 @@ spec:
     spec:
       containers:
         - name: pal-tracker-container
-          image: ellinj/pal-tracker:v1
+          image: ellinj/pal-tracker:build-15
+          envFrom:
+          - secretRef:
+              name: db-credentials
           env:
            - name: WELCOME_MESSAGE
              valueFrom:
                configMapKeyRef:
                  name: pal-tracker
                  key: welcome.message
+           - name: SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE
+             valueFrom:
+               configMapKeyRef:
+                 name: pal-tracker
+                 key: spring.datasource.hikari.maximumpoolsize
           resources:
               limits: 
                 cpu: 100m
